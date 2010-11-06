@@ -1806,7 +1806,8 @@ context_copy_locals(debug_frame_t *debug_frame)
         for (i=2; i<n; i++) 
         {   /* skip first 2 ($_ and $~) */
             if (!rb_is_local_id(tbl[i])) continue; /* skip flip states */
-            rb_hash_aset(hash, rb_str_new2(rb_id2name(tbl[i])), scope->local_vars[i]);
+            VALUE val = (id2ref(tbl[i]) == Qnil) ? Qnil : scope->local_vars[i];
+            rb_hash_aset(hash, rb_str_new2(rb_id2name(tbl[i])), val);
         }
     }
 
