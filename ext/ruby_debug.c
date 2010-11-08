@@ -365,8 +365,6 @@ debug_context_create(VALUE thread)
     debug_context = ALLOC(debug_context_t);
     debug_context-> thnum = ++thnum_max;
 
-    debug_context->last_file = NULL;
-    debug_context->last_line = 0;
     debug_context->flags = 0;
 
     debug_context->stop_next = -1;
@@ -601,8 +599,6 @@ save_current_position(debug_context_t *debug_context)
 
     debug_frame = get_top_frame(debug_context);
     if(!debug_frame) return;
-    debug_context->last_file = debug_frame->file;
-    debug_context->last_line = debug_frame->line;
     CTX_FL_UNSET(debug_context, CTX_FL_ENABLE_BKPT);
     CTX_FL_UNSET(debug_context, CTX_FL_STEPPED);
     CTX_FL_UNSET(debug_context, CTX_FL_FORCE_MOVE);
@@ -700,32 +696,8 @@ debug_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
       if(debug == Qtrue)
           fprintf(stderr, "%s:%d [%s] %s\n", file, line, get_event_name(event), rb_id2name(mid));
 
-      /* There can be many event calls per line, but we only want
-      *one* breakpoint per line. */
-      if(debug_context->last_line != line || debug_context->last_file == NULL ||
-          strcmp(debug_context->last_file, file) != 0)
-      {
-          CTX_FL_SET(debug_context, CTX_FL_ENABLE_BKPT);
-          moved = 1;
-      } 
-      else if(event == RUBY_EVENT_LINE)
-      {
-        /* There are two line-event trace hook calls per IF node - one
-          before the expression eval an done afterwards. 
-        */
-        /* FIXME: the static variable can't be safely used here, since this method 
-        is re-entrant by multiple threads. If we want to provide this kind of functionality 
-        if_eval_event variable must be moved to debug_context structure.
-        */
-        /*
-        static int if_eval_event = 0;
-        if_eval_event = (NODE_IF == nd_type(node)) ? !if_eval_event : 0;
-        if (!if_eval_event)
-        {
-            CTX_FL_SET(debug_context, CTX_FL_ENABLE_BKPT);
-        }
-        */
-      }
+      CTX_FL_SET(debug_context, CTX_FL_ENABLE_BKPT);
+      moved = 1;
     }
     else if(event != RUBY_EVENT_RETURN && event != RUBY_EVENT_C_RETURN)
     {

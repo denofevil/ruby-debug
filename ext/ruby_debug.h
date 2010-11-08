@@ -54,8 +54,6 @@ typedef struct {
     int stack_size;
     int stack_len;
     debug_frame_t *frames;
-    const char * last_file;
-    int last_line;
     VALUE breakpoint;
 } debug_context_t;
 
