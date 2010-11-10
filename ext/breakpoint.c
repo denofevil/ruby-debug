@@ -6,7 +6,7 @@ VALUE rdebug_catchpoints;
 static VALUE cBreakpoint;
 static ID    idEval;
 
-static VALUE
+VALUE
 eval_expression(VALUE args)
 {
     return rb_funcall2(rb_mKernel, idEval, 2, RARRAY(args)->ptr);

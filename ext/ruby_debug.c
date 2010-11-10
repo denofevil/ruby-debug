@@ -44,8 +44,9 @@ RUBY_EXTERN struct RVarmap *ruby_dyna_vars;
 #include <env.h>
 #endif
 
-#define FRAME_N(n)  (&debug_context->frames[debug_context->stack_size-(n)-1])
-#define GET_FRAME   (FRAME_N(check_frame_number(debug_context, frame)))
+#define FRAME_N(n)    (&debug_context->frames[debug_context->stack_size-(n)-1])
+#define GET_FRAME     (FRAME_N(check_frame_number(debug_context, frame)))
+#define PREV_FRAME(x) ((debug_frame_t *)(x) - 1)
 
 #ifndef min
 #define min(x,y) ((x) < (y) ? (x) : (y))
@@ -570,6 +571,8 @@ inline static void
 set_frame_source(rb_event_t event, debug_context_t *debug_context, VALUE self, char *file, int line, ID mid)
 {
     debug_frame_t *top_frame;
+    VALUE block_given;
+
     top_frame = get_top_frame(debug_context);
     if(top_frame)
     {
@@ -1767,9 +1770,12 @@ context_copy_locals(debug_frame_t *debug_frame)
     int n, i;
     struct SCOPE *scope;
     struct RVarmap *vars;
+    debug_frame_t *last_frame;
     VALUE hash = rb_hash_new();
+    VALUE args, expr_result;
 
     scope = debug_frame->info.runtime.scope;
+        
     tbl = scope->local_tbl;
 
     if (tbl && scope->local_vars) 
@@ -1778,8 +1784,9 @@ context_copy_locals(debug_frame_t *debug_frame)
         for (i=2; i<n; i++) 
         {   /* skip first 2 ($_ and $~) */
             if (!rb_is_local_id(tbl[i])) continue; /* skip flip states */
-            VALUE val = (id2ref(tbl[i]) == Qnil) ? Qnil : scope->local_vars[i];
-            rb_hash_aset(hash, rb_str_new2(rb_id2name(tbl[i])), val);
+            args = rb_ary_new3(2, rb_str_new2(rb_id2name(tbl[i])), debug_frame->binding);
+            expr_result = rb_protect(eval_expression, args, 0);
+            rb_hash_aset(hash, rb_str_new2(rb_id2name(tbl[i])), expr_result);
         }
     }
 

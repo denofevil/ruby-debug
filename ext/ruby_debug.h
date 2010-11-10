@@ -119,3 +119,4 @@ extern VALUE debug_catchpoints(VALUE self);
 extern VALUE rdebug_remove_breakpoint(VALUE self, VALUE id_value);
 
 extern void Init_breakpoint();
+extern VALUE eval_expression(VALUE args);
